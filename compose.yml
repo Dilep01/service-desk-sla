@@ -1,0 +1,38 @@
+services:
+  app:
+    build: .
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      DB_URL: jdbc:postgresql://database:5432/servicedesk
+      DB_USER: servicedesk
+      DB_PASSWORD: ${DB_PASSWORD:-local-development-only}
+      SPRING_PROFILES_ACTIVE: demo
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
+      DESK_MAIL_ENABLED: 'true'
+    depends_on:
+      database:
+        condition: service_healthy
+  mailpit:
+    image: axllent/mailpit:v1.33.0
+    ports:
+      - "127.0.0.1:8025:8025"
+  database:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: servicedesk
+      POSTGRES_USER: servicedesk
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-local-development-only}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - database:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U servicedesk"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  database:
+

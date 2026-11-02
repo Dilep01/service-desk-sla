@@ -1,0 +1,9 @@
+import {performance} from 'node:perf_hooks';
+import {writeFileSync,mkdirSync} from 'node:fs';
+import os from 'node:os';
+const base=process.env.DESK_URL||'http://127.0.0.1:8080';let cookies=new Map();
+async function call(path,options={}){const r=await fetch(base+path,{...options,headers:{Cookie:[...cookies].map(([k,v])=>`${k}=${v}`).join('; '),...options.headers}});for(const c of r.headers.getSetCookie()){const pair=c.split(';')[0];const i=pair.indexOf('=');cookies.set(pair.slice(0,i),pair.slice(i+1));}return r;}
+const csrf=await (await call('/api/csrf')).json();const login=await call('/api/login',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded',[csrf.headerName]:csrf.token},body:new URLSearchParams({username:'agent1@demo.local',password:'Demo-local-2026!'})});if(login.status!==204)throw Error('Login failed: '+login.status);
+const me=await (await call('/api/me')).json();const tenant=me.memberships[0].id;const times=[];let errors=0;const start=performance.now();
+await Promise.all(Array.from({length:10},async()=>{for(let i=0;i<10;i++){const t=performance.now();const r=await call(`/api/tenants/${tenant}/tickets`);await r.text();times.push(performance.now()-t);if(!r.ok)errors++;}}));times.sort((a,b)=>a-b);
+const result={timestamp:new Date().toISOString(),base,requests:100,concurrency:10,errors,wallMs:Math.round(performance.now()-start),p50Ms:Math.round(times[49]),p95Ms:Math.round(times[94]),maxMs:Math.round(times.at(-1)),cpu:os.cpus()[0].model,logicalCpus:os.cpus().length,totalMemoryGiB:Math.round(os.totalmem()/1024**3),note:'Local demo dataset; not a production capacity claim.'};mkdirSync('docs/validation',{recursive:true});writeFileSync('docs/validation/load-results.json',JSON.stringify(result,null,2));console.log(JSON.stringify(result,null,2));if(errors)process.exitCode=1;

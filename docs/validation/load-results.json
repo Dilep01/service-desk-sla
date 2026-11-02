@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-11-01T04:37:46.979Z",
+  "base": "http://127.0.0.1:8080",
+  "requests": 100,
+  "concurrency": 10,
+  "errors": 0,
+  "wallMs": 250,
+  "p50Ms": 18,
+  "p95Ms": 42,
+  "maxMs": 110,
+  "cpu": "AMD Ryzen 5 5600U with Radeon Graphics         ",
+  "logicalCpus": 12,
+  "totalMemoryGiB": 15,
+  "note": "Local demo dataset; not a production capacity claim."
+}
